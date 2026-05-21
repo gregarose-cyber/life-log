@@ -1,4 +1,4 @@
-import {
+mport {
   Tabs,
   TabList,
   TabTrigger,

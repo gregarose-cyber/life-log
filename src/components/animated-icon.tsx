@@ -1,4 +1,4 @@
-import { Image } from 'expo-image';
+mport { Image } from 'expo-image';
 import { useState } from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';

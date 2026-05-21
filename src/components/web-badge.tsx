@@ -1,4 +1,4 @@
-import { version } from 'expo/package.json';
+mport { version } from 'expo/package.json';
 import { Image } from 'expo-image';
 import React from 'react';
 import { useColorScheme, StyleSheet } from 'react-native';
