@@ -97,7 +97,7 @@ export default function EntryScreen() {
     if (!result.canceled) {
       for (const asset of result.assets) {
         const fileName = `${user?.id}/${id}/${Date.now()}.jpg`;
-        const base64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType.Base64 });
+        const base64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: 'base64' });
         const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
         await supabase.storage.from('entry-files').upload(fileName, bytes, { contentType: 'image/jpeg' });
         const { data: photoRecord } = await supabase

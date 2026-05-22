@@ -113,7 +113,7 @@ export default function NewEntryScreen() {
 
       for (const photoUri of photos) {
         const fileName = `${user?.id}/${entry.id}/${Date.now()}.jpg`;
-        const base64 = await FileSystem.readAsStringAsync(photoUri, { encoding: FileSystem.EncodingType.Base64 });
+        const base64 = await FileSystem.readAsStringAsync(photoUri, { encoding: 'base64' });
         const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
         await supabase.storage.from('entry-files').upload(fileName, bytes, { contentType: 'image/jpeg' });
         await supabase.from('entry_photos').insert({ entry_id: entry.id, storage_path: fileName });
