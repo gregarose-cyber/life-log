@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../../lib/supabase';
 
 export default function EntryScreen() {
@@ -10,21 +10,28 @@ export default function EntryScreen() {
   const [content, setContent] = useState('');
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<{ url: string; id: string; storagePath: string }[]>([]);
+  const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => { fetchEntry(); }, [id]);
 
-const fetchPhotoUrls = async (photos: any[]) => {
-  const urls = await Promise.all(
-    photos.map(async (photo) => {
+const fetchPhotoUrls = async (photoRecords: any[]) => {
+  const result = await Promise.all(
+    photoRecords.map(async (photo) => {
       const { data } = await supabase.storage
         .from('entry-files')
         .createSignedUrl(photo.storage_path, 3600);
-      return data?.signedUrl || '';
+      return data?.signedUrl ? { url: data.signedUrl, id: photo.id, storagePath: photo.storage_path } : null;
     })
   );
-  setPhotoUrls(urls.filter(Boolean));
+  setPhotos(result.filter(Boolean) as { url: string; id: string; storagePath: string }[]);
+};
+
+const handleDeletePhoto = async (photoId: string, storagePath: string) => {
+  await supabase.storage.from('entry-files').remove([storagePath]);
+  await supabase.from('entry_photos').delete().eq('id', photoId);
+  setPhotos(prev => prev.filter(p => p.id !== photoId));
 };
 
   const fetchEntry = async () => {
@@ -37,6 +44,7 @@ const fetchPhotoUrls = async (photos: any[]) => {
       setEntry(data);
       setContent(data.content || '');
       if (data.photos?.length > 0) fetchPhotoUrls(data.photos);
+      else setPhotos([]);
     }
   };
 
@@ -137,16 +145,32 @@ const fetchPhotoUrls = async (photos: any[]) => {
           </View>
         )}
 
-        {photoUrls.length > 0 && (
-  <View style={styles.section}>
-    <Text style={styles.sectionLabel}>PHOTOS</Text>
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      {photoUrls.map((url, index) => (
-        <Image key={index} source={{ uri: url }} style={styles.photo} contentFit="cover" />
-      ))}
-    </ScrollView>
-  </View>
-)}
+        {photos.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>PHOTOS</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {photos.map((photo) => (
+                <TouchableOpacity key={photo.id} onPress={() => setSelectedPhotoUrl(photo.url)} style={styles.photoWrapper}>
+                  <Image source={{ uri: photo.url }} style={styles.photo} contentFit="cover" />
+                  {editing && (
+                    <TouchableOpacity
+                      style={styles.removePhoto}
+                      onPress={() => handleDeletePhoto(photo.id, photo.storagePath)}
+                    >
+                      <Text style={styles.removePhotoText}>✕</Text>
+                    </TouchableOpacity>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        <Modal visible={!!selectedPhotoUrl} transparent animationType="fade" onRequestClose={() => setSelectedPhotoUrl(null)}>
+          <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setSelectedPhotoUrl(null)}>
+            <Image source={{ uri: selectedPhotoUrl ?? '' }} style={styles.modalImage} contentFit="contain" />
+          </TouchableOpacity>
+        </Modal>
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -176,6 +200,10 @@ const styles = StyleSheet.create({
   tagText: { fontSize: 14, fontWeight: '500' },
   linkCard: { backgroundColor: '#1A1A1A', borderRadius: 8, padding: 12, marginBottom: 8 },
   linkUrl: { color: '#6366f1', fontSize: 14 },
-  photoCount: { color: '#888', fontSize: 14 },
-  photo: { width: 200, height: 200, borderRadius: 12, marginRight: 10 },
+  photoWrapper: { position: 'relative', marginRight: 10 },
+  photo: { width: 200, height: 200, borderRadius: 12 },
+  removePhoto: { position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: 12, width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  removePhotoText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' },
+  modalImage: { width: Dimensions.get('window').width, height: Dimensions.get('window').height * 0.85 },
 });

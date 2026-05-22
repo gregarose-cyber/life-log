@@ -1,12 +1,13 @@
 ﻿import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Tag } from '@/lib/types';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
   Alert,
+  Image,
   KeyboardAvoidingView, Platform,
   ScrollView,
   StyleSheet,
@@ -66,17 +67,18 @@ export default function NewEntryScreen() {
   };
 
   const handlePickPhoto = async () => {
-  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (status !== 'granted') {
-    Alert.alert('Permission needed', 'Please allow access to your photo library in Settings.');
-    return;
-  }
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ['images'],
-    quality: 0.8,
-  });
-  if (!result.canceled) setPhotos([...photos, result.assets[0].uri]);
-};
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please allow access to your photo library in Settings.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+      allowsMultipleSelection: true,
+    });
+    if (!result.canceled) setPhotos([...photos, ...result.assets.map(a => a.uri)]);
+  };
 
   const handleSave = async () => {
     if (!content.trim() && photos.length === 0) {
@@ -84,42 +86,45 @@ export default function NewEntryScreen() {
       return;
     }
     setSaving(true);
+    try {
+      const { data: entry, error } = await supabase
+        .from('entries')
+        .insert({ user_id: user?.id, content: content.trim() || null })
+        .select()
+        .single();
 
-    const { data: entry, error } = await supabase
-      .from('entries')
-      .insert({ user_id: user?.id, content: content.trim() || null })
-      .select()
-      .single();
+      if (error || !entry) {
+        Alert.alert('Error', error?.message ?? 'Could not save entry.');
+        return;
+      }
 
-    if (error || !entry) {
-      Alert.alert('Error', 'Could not save entry.');
+      if (selectedTags.length > 0) {
+        await supabase.from('entry_tags').insert(
+          selectedTags.map(tagId => ({ entry_id: entry.id, tag_id: tagId }))
+        );
+      }
+
+      const validLinks = links.filter(l => l.trim());
+      if (validLinks.length > 0) {
+        await supabase.from('entry_links').insert(
+          validLinks.map(url => ({ entry_id: entry.id, url: url.trim() }))
+        );
+      }
+
+      for (const photoUri of photos) {
+        const fileName = `${user?.id}/${entry.id}/${Date.now()}.jpg`;
+        const base64 = await FileSystem.readAsStringAsync(photoUri, { encoding: FileSystem.EncodingType.Base64 });
+        const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+        await supabase.storage.from('entry-files').upload(fileName, bytes, { contentType: 'image/jpeg' });
+        await supabase.from('entry_photos').insert({ entry_id: entry.id, storage_path: fileName });
+      }
+
+      router.replace('/(app)');
+    } catch (err: any) {
+      Alert.alert('Error', err?.message ?? String(err));
+    } finally {
       setSaving(false);
-      return;
     }
-
-    if (selectedTags.length > 0) {
-      await supabase.from('entry_tags').insert(
-        selectedTags.map(tagId => ({ entry_id: entry.id, tag_id: tagId }))
-      );
-    }
-
-    const validLinks = links.filter(l => l.trim());
-    if (validLinks.length > 0) {
-      await supabase.from('entry_links').insert(
-        validLinks.map(url => ({ entry_id: entry.id, url: url.trim() }))
-      );
-    }
-
-    for (const photoUri of photos) {
-      const fileName = `${user?.id}/${entry.id}/${Date.now()}.jpg`;
-      const base64 = await FileSystem.readAsStringAsync(photoUri, { encoding: FileSystem.EncodingType.Base64 });
-      const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-      await supabase.storage.from('entry-files').upload(fileName, bytes, { contentType: 'image/jpeg' });
-      await supabase.from('entry_photos').insert({ entry_id: entry.id, storage_path: fileName });
-    }
-
-    setSaving(false);
-    router.replace('/(app)');
   };
 
   return (
@@ -203,12 +208,24 @@ export default function NewEntryScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>PHOTOS</Text>
-          <TouchableOpacity style={styles.photoButton} onPress={handlePickPhoto}>
-            <Text style={styles.photoButtonText}>ðŸ“·  Add Photo from Library</Text>
-          </TouchableOpacity>
           {photos.length > 0 && (
-            <Text style={styles.photoCount}>{photos.length} photo{photos.length > 1 ? 's' : ''} attached</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.thumbsRow}>
+              {photos.map((uri, index) => (
+                <View key={index} style={styles.thumbContainer}>
+                  <Image source={{ uri }} style={styles.thumb} />
+                  <TouchableOpacity
+                    style={styles.removePhoto}
+                    onPress={() => setPhotos(photos.filter((_, i) => i !== index))}
+                  >
+                    <Text style={styles.removePhotoText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
           )}
+          <TouchableOpacity style={styles.photoButton} onPress={handlePickPhoto}>
+            <Text style={styles.photoButtonText}>+ Add Photos</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={{ height: 40 }} />
@@ -238,7 +255,11 @@ const styles = StyleSheet.create({
   tagSaveText: { color: '#fff', fontWeight: '600' },
   linkInput: { backgroundColor: '#1A1A1A', borderRadius: 8, padding: 12, color: '#fff', marginBottom: 8 },
   addLink: { color: '#6366f1', fontSize: 14, marginTop: 4 },
+  thumbsRow: { marginBottom: 12 },
+  thumbContainer: { position: 'relative', marginRight: 8 },
+  thumb: { width: 80, height: 80, borderRadius: 8 },
+  removePhoto: { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10, width: 20, height: 20, alignItems: 'center', justifyContent: 'center' },
+  removePhotoText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   photoButton: { backgroundColor: '#1A1A1A', borderRadius: 8, padding: 14, alignItems: 'center' },
-  photoButtonText: { color: '#fff', fontSize: 16 },
-  photoCount: { color: '#6366f1', fontSize: 14, marginTop: 8 },
+  photoButtonText: { color: '#6366f1', fontSize: 16, fontWeight: '600' },
 });
