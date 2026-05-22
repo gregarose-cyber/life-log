@@ -296,7 +296,10 @@ export default function EntryScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>LINKS</Text>
             {entry.links.map((link: any) => (
-              <TouchableOpacity key={link.id} style={styles.linkCard} onPress={() => Linking.openURL(link.url)}>
+              <TouchableOpacity key={link.id} style={styles.linkCard} onPress={() => {
+                const url = /^https?:\/\//i.test(link.url) ? link.url : `https://${link.url}`;
+                Linking.openURL(url);
+              }}>
                 <Text style={styles.linkUrl} numberOfLines={1}>{link.url}</Text>
               </TouchableOpacity>
             ))}
