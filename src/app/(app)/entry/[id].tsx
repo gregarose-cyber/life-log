@@ -1,4 +1,8 @@
+import { useAuth } from '@/context/AuthContext';
+import { Tag } from '@/lib/types';
 import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Dimensions, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -6,33 +10,36 @@ import { supabase } from '../../../lib/supabase';
 
 export default function EntryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuth();
   const [entry, setEntry] = useState<any>(null);
   const [content, setContent] = useState('');
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [photos, setPhotos] = useState<{ url: string; id: string; storagePath: string }[]>([]);
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
+
+  // edit-mode state
+  const [allTags, setAllTags] = useState<Tag[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [showTagInput, setShowTagInput] = useState(false);
+  const [newTagName, setNewTagName] = useState('');
+  const [editLinks, setEditLinks] = useState<string[]>(['']);
+
   const router = useRouter();
 
   useEffect(() => { fetchEntry(); }, [id]);
 
-const fetchPhotoUrls = async (photoRecords: any[]) => {
-  const result = await Promise.all(
-    photoRecords.map(async (photo) => {
-      const { data } = await supabase.storage
-        .from('entry-files')
-        .createSignedUrl(photo.storage_path, 3600);
-      return data?.signedUrl ? { url: data.signedUrl, id: photo.id, storagePath: photo.storage_path } : null;
-    })
-  );
-  setPhotos(result.filter(Boolean) as { url: string; id: string; storagePath: string }[]);
-};
-
-const handleDeletePhoto = async (photoId: string, storagePath: string) => {
-  await supabase.storage.from('entry-files').remove([storagePath]);
-  await supabase.from('entry_photos').delete().eq('id', photoId);
-  setPhotos(prev => prev.filter(p => p.id !== photoId));
-};
+  const fetchPhotoUrls = async (photoRecords: any[]) => {
+    const result = await Promise.all(
+      photoRecords.map(async (photo) => {
+        const { data } = await supabase.storage
+          .from('entry-files')
+          .createSignedUrl(photo.storage_path, 3600);
+        return data?.signedUrl ? { url: data.signedUrl, id: photo.id, storagePath: photo.storage_path } : null;
+      })
+    );
+    setPhotos(result.filter(Boolean) as { url: string; id: string; storagePath: string }[]);
+  };
 
   const fetchEntry = async () => {
     const { data } = await supabase
@@ -48,15 +55,102 @@ const handleDeletePhoto = async (photoId: string, storagePath: string) => {
     }
   };
 
+  const startEditing = async () => {
+    const { data: tagsData } = await supabase.from('tags').select('*').eq('user_id', user?.id);
+    setAllTags(tagsData || []);
+    setSelectedTagIds(entry.tags?.map((t: any) => t.tag?.id).filter(Boolean) ?? []);
+    const existingLinks = entry.links?.map((l: any) => l.url) ?? [];
+    setEditLinks(existingLinks.length > 0 ? existingLinks : ['']);
+    setShowTagInput(false);
+    setNewTagName('');
+    setEditing(true);
+  };
+
+  const handleAddTag = async () => {
+    if (!newTagName.trim()) return;
+    const colors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const { data, error } = await supabase
+      .from('tags')
+      .insert({ name: newTagName.trim(), color, user_id: user?.id })
+      .select()
+      .single();
+    if (!error && data) {
+      setAllTags([...allTags, data]);
+      setSelectedTagIds([...selectedTagIds, data.id]);
+      setNewTagName('');
+      setShowTagInput(false);
+    }
+  };
+
+  const handlePickPhoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please allow access to your photo library in Settings.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+      allowsMultipleSelection: true,
+    });
+    if (!result.canceled) {
+      for (const asset of result.assets) {
+        const fileName = `${user?.id}/${id}/${Date.now()}.jpg`;
+        const base64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: FileSystem.EncodingType.Base64 });
+        const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+        await supabase.storage.from('entry-files').upload(fileName, bytes, { contentType: 'image/jpeg' });
+        const { data: photoRecord } = await supabase
+          .from('entry_photos')
+          .insert({ entry_id: id, storage_path: fileName })
+          .select()
+          .single();
+        if (photoRecord) {
+          const { data: signed } = await supabase.storage.from('entry-files').createSignedUrl(fileName, 3600);
+          if (signed?.signedUrl) {
+            setPhotos(prev => [...prev, { url: signed.signedUrl, id: photoRecord.id, storagePath: fileName }]);
+          }
+        }
+      }
+    }
+  };
+
+  const handleDeletePhoto = async (photoId: string, storagePath: string) => {
+    await supabase.storage.from('entry-files').remove([storagePath]);
+    await supabase.from('entry_photos').delete().eq('id', photoId);
+    setPhotos(prev => prev.filter(p => p.id !== photoId));
+  };
+
   const handleSave = async () => {
     setSaving(true);
-    await supabase
-      .from('entries')
-      .update({ content: content.trim(), updated_at: new Date().toISOString() })
-      .eq('id', id);
-    setSaving(false);
-    setEditing(false);
-    fetchEntry();
+    try {
+      await supabase
+        .from('entries')
+        .update({ content: content.trim(), updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      await supabase.from('entry_tags').delete().eq('entry_id', id);
+      if (selectedTagIds.length > 0) {
+        await supabase.from('entry_tags').insert(
+          selectedTagIds.map(tagId => ({ entry_id: id, tag_id: tagId }))
+        );
+      }
+
+      await supabase.from('entry_links').delete().eq('entry_id', id);
+      const validLinks = editLinks.filter(l => l.trim());
+      if (validLinks.length > 0) {
+        await supabase.from('entry_links').insert(
+          validLinks.map(url => ({ entry_id: id, url: url.trim() }))
+        );
+      }
+
+      setEditing(false);
+      fetchEntry();
+    } catch (err: any) {
+      Alert.alert('Error', err?.message ?? 'Could not save.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = () => {
@@ -96,7 +190,7 @@ const handleDeletePhoto = async (photoId: string, storagePath: string) => {
               <Text style={styles.save}>{saving ? 'Saving...' : 'Save'}</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity onPress={() => setEditing(true)}>
+            <TouchableOpacity onPress={startEditing}>
               <Text style={styles.edit}>Edit</Text>
             </TouchableOpacity>
           )}
@@ -106,7 +200,7 @@ const handleDeletePhoto = async (photoId: string, storagePath: string) => {
         </View>
       </View>
 
-      <ScrollView style={styles.scroll}>
+      <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.date}>{formatDate(entry.created_at)}</Text>
 
         {editing ? (
@@ -121,20 +215,84 @@ const handleDeletePhoto = async (photoId: string, storagePath: string) => {
           <Text style={styles.content}>{entry.content || 'No text content'}</Text>
         )}
 
-        {entry.tags?.length > 0 && (
+        {/* TAGS */}
+        {editing ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>TAGS</Text>
+            <View style={styles.tagsRow}>
+              {allTags.map(tag => (
+                <TouchableOpacity
+                  key={tag.id}
+                  style={[styles.tag, selectedTagIds.includes(tag.id) && { backgroundColor: tag.color + '33', borderColor: tag.color }]}
+                  onPress={() => setSelectedTagIds(prev =>
+                    prev.includes(tag.id) ? prev.filter(i => i !== tag.id) : [...prev, tag.id]
+                  )}
+                >
+                  <Text style={[styles.tagText, selectedTagIds.includes(tag.id) && { color: tag.color }]}>{tag.name}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity style={styles.addTag} onPress={() => setShowTagInput(true)}>
+                <Text style={styles.addTagText}>+ New Tag</Text>
+              </TouchableOpacity>
+            </View>
+            {showTagInput && (
+              <View style={styles.tagInputRow}>
+                <TextInput
+                  style={styles.tagInput}
+                  placeholder="Tag name..."
+                  placeholderTextColor="#555"
+                  value={newTagName}
+                  onChangeText={setNewTagName}
+                  autoFocus
+                />
+                <TouchableOpacity style={styles.tagSave} onPress={handleAddTag}>
+                  <Text style={styles.tagSaveText}>Add</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        ) : entry.tags?.length > 0 ? (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>TAGS</Text>
             <View style={styles.tagsRow}>
               {entry.tags.map((t: any) => (
-                <View key={t.tag?.id} style={[styles.tag, { backgroundColor: t.tag?.color + '33' }]}>
+                <View key={t.tag?.id} style={[styles.tag, { backgroundColor: t.tag?.color + '33', borderColor: t.tag?.color }]}>
                   <Text style={[styles.tagText, { color: t.tag?.color }]}>{t.tag?.name}</Text>
                 </View>
               ))}
             </View>
           </View>
-        )}
+        ) : null}
 
-        {entry.links?.length > 0 && (
+        {/* LINKS */}
+        {editing ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>LINKS</Text>
+            {editLinks.map((link, index) => (
+              <View key={index} style={styles.linkEditRow}>
+                <TextInput
+                  style={styles.linkInput}
+                  placeholder="https://..."
+                  placeholderTextColor="#444"
+                  value={link}
+                  onChangeText={(text) => {
+                    const updated = [...editLinks];
+                    updated[index] = text;
+                    setEditLinks(updated);
+                  }}
+                  autoCapitalize="none"
+                  keyboardType="url"
+                />
+                <TouchableOpacity onPress={() => setEditLinks(editLinks.filter((_, i) => i !== index))}>
+                  <Text style={styles.removeLinkText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+            <TouchableOpacity onPress={() => setEditLinks([...editLinks, ''])}>
+              <Text style={styles.addLink}>+ Add link</Text>
+            </TouchableOpacity>
+          </View>
+        ) : entry.links?.length > 0 ? (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>LINKS</Text>
             {entry.links.map((link: any) => (
@@ -143,12 +301,13 @@ const handleDeletePhoto = async (photoId: string, storagePath: string) => {
               </View>
             ))}
           </View>
-        )}
+        ) : null}
 
-        {photos.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>PHOTOS</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {/* PHOTOS */}
+        <View style={styles.section}>
+          {(photos.length > 0 || editing) && <Text style={styles.sectionLabel}>PHOTOS</Text>}
+          {photos.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: editing ? 12 : 0 }}>
               {photos.map((photo) => (
                 <TouchableOpacity key={photo.id} onPress={() => setSelectedPhotoUrl(photo.url)} style={styles.photoWrapper}>
                   <Image source={{ uri: photo.url }} style={styles.photo} contentFit="cover" />
@@ -163,8 +322,13 @@ const handleDeletePhoto = async (photoId: string, storagePath: string) => {
                 </TouchableOpacity>
               ))}
             </ScrollView>
-          </View>
-        )}
+          )}
+          {editing && (
+            <TouchableOpacity style={styles.photoButton} onPress={handlePickPhoto}>
+              <Text style={styles.photoButtonText}>+ Add Photos</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         <Modal visible={!!selectedPhotoUrl} transparent animationType="fade" onRequestClose={() => setSelectedPhotoUrl(null)}>
           <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setSelectedPhotoUrl(null)}>
@@ -195,15 +359,30 @@ const styles = StyleSheet.create({
   contentInput: { color: '#fff', fontSize: 18, lineHeight: 30, minHeight: 200 },
   section: { marginTop: 32, borderTopWidth: 1, borderTopColor: '#1A1A1A', paddingTop: 20 },
   sectionLabel: { color: '#555', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 12 },
+  // tags
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  tagText: { fontSize: 14, fontWeight: '500' },
+  tag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#2A2A2A' },
+  tagText: { color: '#555', fontSize: 14, fontWeight: '500' },
+  addTag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#333', borderStyle: 'dashed' },
+  addTagText: { color: '#555', fontSize: 14 },
+  tagInputRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  tagInput: { flex: 1, backgroundColor: '#1A1A1A', borderRadius: 8, padding: 10, color: '#fff' },
+  tagSave: { backgroundColor: '#6366f1', borderRadius: 8, paddingHorizontal: 16, justifyContent: 'center' },
+  tagSaveText: { color: '#fff', fontWeight: '600' },
+  // links
   linkCard: { backgroundColor: '#1A1A1A', borderRadius: 8, padding: 12, marginBottom: 8 },
   linkUrl: { color: '#6366f1', fontSize: 14 },
+  linkEditRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  linkInput: { flex: 1, backgroundColor: '#1A1A1A', borderRadius: 8, padding: 12, color: '#fff' },
+  removeLinkText: { color: '#555', fontSize: 18, paddingHorizontal: 4 },
+  addLink: { color: '#6366f1', fontSize: 14, marginTop: 4 },
+  // photos
   photoWrapper: { position: 'relative', marginRight: 10 },
   photo: { width: 200, height: 200, borderRadius: 12 },
   removePhoto: { position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: 12, width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
   removePhotoText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  photoButton: { backgroundColor: '#1A1A1A', borderRadius: 8, padding: 14, alignItems: 'center' },
+  photoButtonText: { color: '#6366f1', fontSize: 16, fontWeight: '600' },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' },
   modalImage: { width: Dimensions.get('window').width, height: Dimensions.get('window').height * 0.85 },
 });
