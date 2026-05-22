@@ -5,7 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Dimensions, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../../lib/supabase';
 
 export default function EntryScreen() {
@@ -296,9 +296,9 @@ export default function EntryScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>LINKS</Text>
             {entry.links.map((link: any) => (
-              <View key={link.id} style={styles.linkCard}>
+              <TouchableOpacity key={link.id} style={styles.linkCard} onPress={() => Linking.openURL(link.url)}>
                 <Text style={styles.linkUrl} numberOfLines={1}>{link.url}</Text>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         ) : null}
