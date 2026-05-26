@@ -3,9 +3,10 @@ import { Tag } from '@/lib/types';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
+import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Alert, Dimensions, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Animated, Dimensions, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../../lib/supabase';
 
 export default function EntryScreen() {
@@ -24,8 +25,52 @@ export default function EntryScreen() {
   const [showTagInput, setShowTagInput] = useState(false);
   const [newTagName, setNewTagName] = useState('');
   const [editLinks, setEditLinks] = useState<string[]>(['']);
+  const [listening, setListening] = useState(false);
+  const [interimText, setInterimText] = useState('');
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   const router = useRouter();
+
+  useSpeechRecognitionEvent('start', () => setListening(true));
+  useSpeechRecognitionEvent('end', () => { setListening(false); setInterimText(''); });
+  useSpeechRecognitionEvent('result', (event) => {
+    const transcript = event.results[0]?.transcript ?? '';
+    if (event.isFinal) {
+      setContent(prev => prev + (prev.trimEnd() ? ' ' : '') + transcript);
+      setInterimText('');
+    } else {
+      setInterimText(transcript);
+    }
+  });
+  useSpeechRecognitionEvent('error', (event) => {
+    Alert.alert('Speech error', event.message ?? event.error);
+    setListening(false);
+    setInterimText('');
+  });
+
+  useEffect(() => {
+    if (listening) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.25, duration: 600, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.stopAnimation();
+      Animated.timing(pulseAnim, { toValue: 1, duration: 150, useNativeDriver: true }).start();
+    }
+  }, [listening]);
+
+  const handleMicPress = async () => {
+    if (listening) { ExpoSpeechRecognitionModule.stop(); return; }
+    const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    if (!granted) {
+      Alert.alert('Permission needed', 'Please allow microphone and speech recognition access in Settings.');
+      return;
+    }
+    ExpoSpeechRecognitionModule.start({ lang: 'en-US', interimResults: true });
+  };
 
   useEffect(() => { fetchEntry(); }, [id]);
 
@@ -204,13 +249,27 @@ export default function EntryScreen() {
         <Text style={styles.date}>{formatDate(entry.created_at)}</Text>
 
         {editing ? (
-          <TextInput
-            style={styles.contentInput}
-            value={content}
-            onChangeText={setContent}
-            multiline
-            autoFocus
-          />
+          <>
+            <TextInput
+              style={styles.contentInput}
+              value={content}
+              onChangeText={setContent}
+              multiline
+              autoFocus
+            />
+            <View style={styles.micRow}>
+              <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                <TouchableOpacity
+                  style={[styles.micButton, listening && styles.micButtonActive]}
+                  onPress={handleMicPress}
+                >
+                  <Text style={styles.micIcon}>{listening ? '⏹' : '🎙'}</Text>
+                </TouchableOpacity>
+              </Animated.View>
+              {listening && <Text style={styles.listeningLabel}>Listening...</Text>}
+            </View>
+            {interimText ? <Text style={styles.interimText}>{interimText}</Text> : null}
+          </>
         ) : (
           <Text style={styles.content}>{entry.content || 'No text content'}</Text>
         )}
@@ -360,6 +419,12 @@ const styles = StyleSheet.create({
   date: { color: '#6366f1', fontSize: 13, fontWeight: '600', marginBottom: 20, textTransform: 'uppercase', letterSpacing: 0.5 },
   content: { color: '#fff', fontSize: 18, lineHeight: 30 },
   contentInput: { color: '#fff', fontSize: 18, lineHeight: 30, minHeight: 200 },
+  micRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
+  micButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#1A1A1A', borderWidth: 1, borderColor: '#2A2A2A', alignItems: 'center', justifyContent: 'center' },
+  micButtonActive: { backgroundColor: '#3b0000', borderColor: '#ef4444' },
+  micIcon: { fontSize: 22 },
+  listeningLabel: { color: '#ef4444', fontSize: 14, fontWeight: '600' },
+  interimText: { color: '#888', fontSize: 16, lineHeight: 24, marginBottom: 8, fontStyle: 'italic' },
   section: { marginTop: 32, borderTopWidth: 1, borderTopColor: '#1A1A1A', paddingTop: 20 },
   sectionLabel: { color: '#555', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 12 },
   // tags
