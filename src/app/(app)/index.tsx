@@ -3,13 +3,14 @@ import { supabase } from '@/lib/supabase';
 import { Entry } from '@/lib/types';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Alert, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function JournalScreen() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const loadedIds = useRef<Set<string>>(new Set());
   const { signOut, user } = useAuth();
   const router = useRouter();
 
@@ -25,9 +26,10 @@ export default function JournalScreen() {
 
     const fetched = data || [];
     setEntries(fetched);
+    setLoading(false); // render entries immediately, fetch thumbnails after
 
     const firstPhotos = fetched
-      .filter((e: any) => e.photos?.length > 0)
+      .filter((e: any) => e.photos?.length > 0 && !loadedIds.current.has(e.id))
       .map((e: any) => ({ entryId: e.id, path: e.photos[0].storage_path }));
 
     if (firstPhotos.length > 0) {
@@ -36,12 +38,13 @@ export default function JournalScreen() {
         .createSignedUrls(firstPhotos.map(p => p.path), 3600);
       const map: Record<string, string> = {};
       signed?.forEach((item, i) => {
-        if (item.signedUrl) map[firstPhotos[i].entryId] = item.signedUrl;
+        if (item.signedUrl) {
+          map[firstPhotos[i].entryId] = item.signedUrl;
+          loadedIds.current.add(firstPhotos[i].entryId);
+        }
       });
-      setThumbnails(map);
+      setThumbnails(prev => ({ ...prev, ...map }));
     }
-
-    setLoading(false);
   };
 
   useFocusEffect(useCallback(() => { fetchEntries(); }, []));
