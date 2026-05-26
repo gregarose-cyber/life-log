@@ -136,6 +136,16 @@ export default function NewEntryScreen() {
     if (!result.canceled) setPhotos([...photos, ...result.assets.map(a => a.uri)]);
   };
 
+  const handleTakePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please allow camera access in Settings.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
+    if (!result.canceled) setPhotos([...photos, result.assets[0].uri]);
+  };
+
   const handleSave = async () => {
     if (!content.trim() && photos.length === 0) {
       Alert.alert('Empty entry', 'Please write something or add a photo.');
@@ -298,9 +308,14 @@ export default function NewEntryScreen() {
               ))}
             </ScrollView>
           )}
-          <TouchableOpacity style={styles.photoButton} onPress={handlePickPhoto}>
-            <Text style={styles.photoButtonText}>+ Add Photos</Text>
-          </TouchableOpacity>
+          <View style={styles.photoButtons}>
+            <TouchableOpacity style={[styles.photoButton, { flex: 1 }]} onPress={handlePickPhoto}>
+              <Text style={styles.photoButtonText}>+ Library</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.photoButton, { flex: 1 }]} onPress={handleTakePhoto}>
+              <Text style={styles.photoButtonText}>+ Camera</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={{ height: 40 }} />
@@ -341,6 +356,7 @@ const styles = StyleSheet.create({
   thumb: { width: 80, height: 80, borderRadius: 8 },
   removePhoto: { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10, width: 20, height: 20, alignItems: 'center', justifyContent: 'center' },
   removePhotoText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  photoButtons: { flexDirection: 'row', gap: 8 },
   photoButton: { backgroundColor: '#1A1A1A', borderRadius: 8, padding: 14, alignItems: 'center' },
   photoButtonText: { color: '#6366f1', fontSize: 16, fontWeight: '600' },
 });
