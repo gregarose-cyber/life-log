@@ -27,7 +27,9 @@ export default function BiometricGate({ children }: Props) {
   };
 
   const handleAppStateChange = async (next: AppStateStatus) => {
-    if (appState.current.match(/inactive|background/) && next === 'active') {
+    // Only re-lock when returning from background (home screen / app switcher).
+    // inactive→active is caused by Face ID prompt, control centre, etc. — never re-lock for that.
+    if (appState.current === 'background' && next === 'active') {
       const enabled = await SecureStore.getItemAsync(BIOMETRIC_LOCK_KEY);
       if (enabled === 'true') setLocked(true);
     }

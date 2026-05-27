@@ -8,18 +8,22 @@ import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } f
 export default function SettingsScreen() {
   const { signOut } = useAuth();
   const [biometricEnabled, setBiometricEnabled] = useState(false);
-  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [supportedTypes, setSupportedTypes] = useState<number[]>([]);
 
   useEffect(() => {
     (async () => {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-      setBiometricAvailable(hasHardware && isEnrolled);
-
+      const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
+      setSupportedTypes(types);
       const stored = await SecureStore.getItemAsync(BIOMETRIC_LOCK_KEY);
       setBiometricEnabled(stored === 'true');
     })();
   }, []);
+
+  const biometricLabel = supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)
+    ? 'Face ID Lock'
+    : supportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)
+    ? 'Touch ID Lock'
+    : 'Biometric Lock';
 
   const handleToggle = async (value: boolean) => {
     if (value) {
@@ -27,7 +31,10 @@ export default function SettingsScreen() {
         promptMessage: 'Confirm to enable biometric lock',
         fallbackLabel: 'Use Passcode',
       });
-      if (!result.success) return;
+      if (!result.success) {
+        Alert.alert('Not Available', 'Biometric authentication is not set up on this device. Enable Face ID or Touch ID in iPhone Settings first.');
+        return;
+      }
     }
     await SecureStore.setItemAsync(BIOMETRIC_LOCK_KEY, value ? 'true' : 'false');
     setBiometricEnabled(value);
@@ -48,17 +55,12 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>Security</Text>
         <View style={styles.row}>
           <View style={styles.rowLeft}>
-            <Text style={styles.rowLabel}>Biometric Lock</Text>
-            <Text style={styles.rowSubtitle}>
-              {biometricAvailable
-                ? 'Lock app when it goes to background'
-                : 'No biometrics enrolled on this device'}
-            </Text>
+            <Text style={styles.rowLabel}>{biometricLabel}</Text>
+            <Text style={styles.rowSubtitle}>Lock app when it goes to background</Text>
           </View>
           <Switch
             value={biometricEnabled}
             onValueChange={handleToggle}
-            disabled={!biometricAvailable}
             trackColor={{ true: '#6366f1' }}
           />
         </View>
