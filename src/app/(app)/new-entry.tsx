@@ -5,6 +5,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
+import { captureAutoMetadata } from '@/utils/autoMetadata';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
@@ -153,9 +154,18 @@ export default function NewEntryScreen() {
     }
     setSaving(true);
     try {
+      const meta = await captureAutoMetadata();
+
       const { data: entry, error } = await supabase
         .from('entries')
-        .insert({ user_id: user?.id, content: content.trim() || null })
+        .insert({
+          user_id: user?.id,
+          content: content.trim() || null,
+          latitude: meta.latitude,
+          longitude: meta.longitude,
+          weather: meta.weather,
+          time_of_day: meta.time_of_day,
+        })
         .select()
         .single();
 

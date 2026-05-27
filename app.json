@@ -40,7 +40,13 @@
         }
       ],
       "expo-secure-store",
-      "expo-speech-recognition"
+      "expo-speech-recognition",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Life Log uses your location to tag entries with where you are."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

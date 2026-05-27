@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { captureAutoMetadata } from '@/utils/autoMetadata';
 import { EntryTemplate, TEMPLATES, serializeTemplate } from './EntryTemplates';
 
 interface Props {
@@ -58,9 +59,18 @@ export default function QuickCaptureModal({ visible, onClose, onSaved }: Props) 
 
     setSaving(true);
     try {
+      const meta = await captureAutoMetadata();
+
       const { data: entry, error } = await supabase
         .from('entries')
-        .insert({ user_id: user?.id, content })
+        .insert({
+          user_id: user?.id,
+          content,
+          latitude: meta.latitude,
+          longitude: meta.longitude,
+          weather: meta.weather,
+          time_of_day: meta.time_of_day,
+        })
         .select()
         .single();
 

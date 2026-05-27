@@ -247,6 +247,12 @@ export default function EntryScreen() {
 
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.date}>{formatDate(entry.created_at)}</Text>
+        {(entry.weather || entry.time_of_day) && (
+          <View style={styles.metaRow}>
+            {entry.time_of_day ? <Text style={styles.metaText}>{entry.time_of_day}</Text> : null}
+            {entry.weather ? <Text style={styles.metaText}>{entry.weather}</Text> : null}
+          </View>
+        )}
 
         {editing ? (
           <>
@@ -416,7 +422,9 @@ const styles = StyleSheet.create({
   deleteBtn: {},
   delete: { color: '#ef4444', fontSize: 16 },
   scroll: { flex: 1, padding: 20, backgroundColor: '#FFFFFF' },
-  date: { color: '#6366f1', fontSize: 13, fontWeight: '600', marginBottom: 20, textTransform: 'uppercase', letterSpacing: 0.5 },
+  date: { color: '#6366f1', fontSize: 13, fontWeight: '600', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
+  metaRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
+  metaText: { color: '#AEAEB2', fontSize: 13 },
   content: { color: '#1C1C1E', fontSize: 18, lineHeight: 30 },
   contentInput: { color: '#1C1C1E', fontSize: 18, lineHeight: 30, minHeight: 200 },
   micRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },

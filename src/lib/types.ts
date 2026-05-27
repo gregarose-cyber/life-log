@@ -1,8 +1,12 @@
-xport interface Entry {
+export interface Entry {
   id: string;
   user_id: string;
   content: string | null;
   audio_url: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  weather: string | null;
+  time_of_day: string | null;
   created_at: string;
   updated_at: string;
   tags?: Tag[];
