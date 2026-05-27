@@ -209,7 +209,7 @@ export default function NewEntryScreen() {
         <TextInput
           style={styles.contentInput}
           placeholder="What's on your mind..."
-          placeholderTextColor="#444"
+          placeholderTextColor="#AEAEB2"
           value={content}
           onChangeText={setContent}
           multiline
@@ -256,7 +256,7 @@ export default function NewEntryScreen() {
               <TextInput
                 style={styles.tagInput}
                 placeholder="Tag name..."
-                placeholderTextColor="#555"
+                placeholderTextColor="#AEAEB2"
                 value={newTagName}
                 onChangeText={setNewTagName}
                 autoFocus
@@ -275,7 +275,7 @@ export default function NewEntryScreen() {
               key={index}
               style={styles.linkInput}
               placeholder="https://..."
-              placeholderTextColor="#444"
+              placeholderTextColor="#AEAEB2"
               value={link}
               onChangeText={(text) => {
                 const updated = [...links];
@@ -325,38 +325,38 @@ export default function NewEntryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F0F0F' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 80, borderBottomWidth: 1, borderBottomColor: '#1A1A1A' },
-  title: { color: '#fff', fontSize: 17, fontWeight: '600' },
-  cancel: { color: '#555', fontSize: 16 },
+  container: { flex: 1, backgroundColor: '#F2F2F7' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 80, borderBottomWidth: 1, borderBottomColor: '#E5E5EA', backgroundColor: '#FFFFFF' },
+  title: { color: '#1C1C1E', fontSize: 17, fontWeight: '600' },
+  cancel: { color: '#8E8E93', fontSize: 16 },
   save: { color: '#6366f1', fontSize: 16, fontWeight: '600' },
   scroll: { flex: 1 },
-  contentInput: { color: '#fff', fontSize: 18, lineHeight: 28, padding: 20, minHeight: 200 },
-  micRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 16, gap: 12 },
-  micButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#1A1A1A', borderWidth: 1, borderColor: '#2A2A2A', alignItems: 'center', justifyContent: 'center' },
-  micButtonActive: { backgroundColor: '#3b0000', borderColor: '#ef4444' },
+  contentInput: { color: '#1C1C1E', fontSize: 18, lineHeight: 28, padding: 20, minHeight: 200, backgroundColor: '#FFFFFF' },
+  micRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 16, gap: 12, backgroundColor: '#FFFFFF' },
+  micButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#F2F2F7', borderWidth: 1, borderColor: '#E5E5EA', alignItems: 'center', justifyContent: 'center' },
+  micButtonActive: { backgroundColor: '#FEE2E2', borderColor: '#ef4444' },
   micIcon: { fontSize: 22 },
   listeningLabel: { color: '#ef4444', fontSize: 14, fontWeight: '600' },
-  interimText: { color: '#888', fontSize: 16, lineHeight: 24, paddingHorizontal: 20, paddingBottom: 12, fontStyle: 'italic' },
-  section: { padding: 20, borderTopWidth: 1, borderTopColor: '#1A1A1A' },
-  sectionLabel: { color: '#555', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 12 },
+  interimText: { color: '#8E8E93', fontSize: 16, lineHeight: 24, paddingHorizontal: 20, paddingBottom: 12, fontStyle: 'italic', backgroundColor: '#FFFFFF' },
+  section: { padding: 20, borderTopWidth: 1, borderTopColor: '#E5E5EA', backgroundColor: '#FFFFFF' },
+  sectionLabel: { color: '#8E8E93', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 12 },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#2A2A2A' },
-  tagText: { color: '#555', fontSize: 14 },
-  addTag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#333', borderStyle: 'dashed' },
-  addTagText: { color: '#555', fontSize: 14 },
+  tag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#E5E5EA' },
+  tagText: { color: '#8E8E93', fontSize: 14 },
+  addTag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#D1D1D6', borderStyle: 'dashed' },
+  addTagText: { color: '#8E8E93', fontSize: 14 },
   tagInputRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
-  tagInput: { flex: 1, backgroundColor: '#1A1A1A', borderRadius: 8, padding: 10, color: '#fff' },
+  tagInput: { flex: 1, backgroundColor: '#F2F2F7', borderRadius: 8, padding: 10, color: '#1C1C1E' },
   tagSave: { backgroundColor: '#6366f1', borderRadius: 8, paddingHorizontal: 16, justifyContent: 'center' },
   tagSaveText: { color: '#fff', fontWeight: '600' },
-  linkInput: { backgroundColor: '#1A1A1A', borderRadius: 8, padding: 12, color: '#fff', marginBottom: 8 },
+  linkInput: { backgroundColor: '#F2F2F7', borderRadius: 8, padding: 12, color: '#1C1C1E', marginBottom: 8 },
   addLink: { color: '#6366f1', fontSize: 14, marginTop: 4 },
   thumbsRow: { marginBottom: 12 },
   thumbContainer: { position: 'relative', marginRight: 8 },
   thumb: { width: 80, height: 80, borderRadius: 8 },
-  removePhoto: { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10, width: 20, height: 20, alignItems: 'center', justifyContent: 'center' },
+  removePhoto: { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 10, width: 20, height: 20, alignItems: 'center', justifyContent: 'center' },
   removePhotoText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   photoButtons: { flexDirection: 'row', gap: 8 },
-  photoButton: { backgroundColor: '#1A1A1A', borderRadius: 8, padding: 14, alignItems: 'center' },
+  photoButton: { backgroundColor: '#F2F2F7', borderRadius: 8, padding: 14, alignItems: 'center' },
   photoButtonText: { color: '#6366f1', fontSize: 16, fontWeight: '600' },
 });

@@ -141,7 +141,7 @@ export default function QuickCaptureModal({ visible, onClose, onSaved }: Props) 
               <TextInput
                 style={styles.freeInput}
                 placeholder="What's on your mind..."
-                placeholderTextColor="#555"
+                placeholderTextColor="#AEAEB2"
                 value={freeText}
                 onChangeText={setFreeText}
                 multiline
@@ -175,7 +175,7 @@ export default function QuickCaptureModal({ visible, onClose, onSaved }: Props) 
                   <TextInput
                     style={[styles.fieldInput, field.multiline && styles.fieldInputMultiline]}
                     placeholder={field.placeholder}
-                    placeholderTextColor="#555"
+                    placeholderTextColor="#AEAEB2"
                     value={fieldValues[field.key] ?? ''}
                     onChangeText={text => setFieldValues(prev => ({ ...prev, [field.key]: text }))}
                     multiline={field.multiline}
@@ -194,27 +194,27 @@ export default function QuickCaptureModal({ visible, onClose, onSaved }: Props) 
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
-  sheet: { backgroundColor: '#161616', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%', minHeight: '60%' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#2A2A2A' },
-  headerTitle: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  headerCancel: { color: '#555', fontSize: 16, width: 60 },
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
+  sheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '90%', minHeight: '60%' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#E5E5EA' },
+  headerTitle: { color: '#1C1C1E', fontSize: 16, fontWeight: '600' },
+  headerCancel: { color: '#8E8E93', fontSize: 16, width: 60 },
   headerBack: { color: '#6366f1', fontSize: 16, width: 60 },
   headerSave: { color: '#6366f1', fontSize: 16, fontWeight: '600', width: 60, textAlign: 'right' },
   body: { flex: 1 },
   // free text
-  freeInput: { color: '#fff', fontSize: 17, lineHeight: 26, padding: 20, minHeight: 140 },
-  templateToggle: { marginHorizontal: 20, marginBottom: 20, padding: 14, backgroundColor: '#1E1E1E', borderRadius: 10, borderWidth: 1, borderColor: '#2A2A2A', alignItems: 'center' },
-  templateToggleText: { color: '#888', fontSize: 15 },
+  freeInput: { color: '#1C1C1E', fontSize: 17, lineHeight: 26, padding: 20, minHeight: 140 },
+  templateToggle: { marginHorizontal: 20, marginBottom: 20, padding: 14, backgroundColor: '#F2F2F7', borderRadius: 10, borderWidth: 1, borderColor: '#E5E5EA', alignItems: 'center' },
+  templateToggleText: { color: '#8E8E93', fontSize: 15 },
   // template picker
   templateGrid: { flexDirection: 'row', flexWrap: 'wrap', padding: 16, gap: 12 },
-  templateCard: { width: '47%', backgroundColor: '#1E1E1E', borderRadius: 14, padding: 18, borderWidth: 1, borderColor: '#2A2A2A', alignItems: 'center', gap: 6 },
+  templateCard: { width: '47%', backgroundColor: '#F2F2F7', borderRadius: 14, padding: 18, borderWidth: 1, borderColor: '#E5E5EA', alignItems: 'center', gap: 6 },
   templateIcon: { fontSize: 32 },
-  templateName: { color: '#fff', fontSize: 15, fontWeight: '600', textAlign: 'center' },
-  templateFieldCount: { color: '#555', fontSize: 12 },
+  templateName: { color: '#1C1C1E', fontSize: 15, fontWeight: '600', textAlign: 'center' },
+  templateFieldCount: { color: '#8E8E93', fontSize: 12 },
   // template form
   fieldRow: { paddingHorizontal: 20, paddingTop: 18 },
-  fieldLabel: { color: '#555', fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 },
-  fieldInput: { backgroundColor: '#1E1E1E', borderRadius: 10, padding: 12, color: '#fff', fontSize: 16, borderWidth: 1, borderColor: '#2A2A2A' },
+  fieldLabel: { color: '#8E8E93', fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 },
+  fieldInput: { backgroundColor: '#F2F2F7', borderRadius: 10, padding: 12, color: '#1C1C1E', fontSize: 16, borderWidth: 1, borderColor: '#E5E5EA' },
   fieldInputMultiline: { minHeight: 80, textAlignVertical: 'top' },
 });

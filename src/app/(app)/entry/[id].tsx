@@ -299,7 +299,7 @@ export default function EntryScreen() {
                 <TextInput
                   style={styles.tagInput}
                   placeholder="Tag name..."
-                  placeholderTextColor="#555"
+                  placeholderTextColor="#AEAEB2"
                   value={newTagName}
                   onChangeText={setNewTagName}
                   autoFocus
@@ -332,7 +332,7 @@ export default function EntryScreen() {
                 <TextInput
                   style={styles.linkInput}
                   placeholder="https://..."
-                  placeholderTextColor="#444"
+                  placeholderTextColor="#AEAEB2"
                   value={link}
                   onChangeText={(text) => {
                     const updated = [...editLinks];
@@ -405,51 +405,51 @@ export default function EntryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F0F0F' },
-  loading: { flex: 1, backgroundColor: '#0F0F0F', justifyContent: 'center', alignItems: 'center' },
-  loadingText: { color: '#555' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60, borderBottomWidth: 1, borderBottomColor: '#1A1A1A' },
+  container: { flex: 1, backgroundColor: '#F2F2F7' },
+  loading: { flex: 1, backgroundColor: '#F2F2F7', justifyContent: 'center', alignItems: 'center' },
+  loadingText: { color: '#8E8E93' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60, borderBottomWidth: 1, borderBottomColor: '#E5E5EA', backgroundColor: '#FFFFFF' },
   back: { color: '#6366f1', fontSize: 16 },
   headerActions: { flexDirection: 'row', gap: 16, alignItems: 'center' },
   edit: { color: '#6366f1', fontSize: 16, fontWeight: '600' },
   save: { color: '#6366f1', fontSize: 16, fontWeight: '600' },
   deleteBtn: {},
   delete: { color: '#ef4444', fontSize: 16 },
-  scroll: { flex: 1, padding: 20 },
+  scroll: { flex: 1, padding: 20, backgroundColor: '#FFFFFF' },
   date: { color: '#6366f1', fontSize: 13, fontWeight: '600', marginBottom: 20, textTransform: 'uppercase', letterSpacing: 0.5 },
-  content: { color: '#fff', fontSize: 18, lineHeight: 30 },
-  contentInput: { color: '#fff', fontSize: 18, lineHeight: 30, minHeight: 200 },
+  content: { color: '#1C1C1E', fontSize: 18, lineHeight: 30 },
+  contentInput: { color: '#1C1C1E', fontSize: 18, lineHeight: 30, minHeight: 200 },
   micRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
-  micButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#1A1A1A', borderWidth: 1, borderColor: '#2A2A2A', alignItems: 'center', justifyContent: 'center' },
-  micButtonActive: { backgroundColor: '#3b0000', borderColor: '#ef4444' },
+  micButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#F2F2F7', borderWidth: 1, borderColor: '#E5E5EA', alignItems: 'center', justifyContent: 'center' },
+  micButtonActive: { backgroundColor: '#FEE2E2', borderColor: '#ef4444' },
   micIcon: { fontSize: 22 },
   listeningLabel: { color: '#ef4444', fontSize: 14, fontWeight: '600' },
-  interimText: { color: '#888', fontSize: 16, lineHeight: 24, marginBottom: 8, fontStyle: 'italic' },
-  section: { marginTop: 32, borderTopWidth: 1, borderTopColor: '#1A1A1A', paddingTop: 20 },
-  sectionLabel: { color: '#555', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 12 },
+  interimText: { color: '#8E8E93', fontSize: 16, lineHeight: 24, marginBottom: 8, fontStyle: 'italic' },
+  section: { marginTop: 32, borderTopWidth: 1, borderTopColor: '#E5E5EA', paddingTop: 20 },
+  sectionLabel: { color: '#8E8E93', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 12 },
   // tags
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#2A2A2A' },
-  tagText: { color: '#555', fontSize: 14, fontWeight: '500' },
-  addTag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#333', borderStyle: 'dashed' },
-  addTagText: { color: '#555', fontSize: 14 },
+  tag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#E5E5EA' },
+  tagText: { color: '#8E8E93', fontSize: 14, fontWeight: '500' },
+  addTag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#D1D1D6', borderStyle: 'dashed' },
+  addTagText: { color: '#8E8E93', fontSize: 14 },
   tagInputRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
-  tagInput: { flex: 1, backgroundColor: '#1A1A1A', borderRadius: 8, padding: 10, color: '#fff' },
+  tagInput: { flex: 1, backgroundColor: '#F2F2F7', borderRadius: 8, padding: 10, color: '#1C1C1E' },
   tagSave: { backgroundColor: '#6366f1', borderRadius: 8, paddingHorizontal: 16, justifyContent: 'center' },
   tagSaveText: { color: '#fff', fontWeight: '600' },
   // links
-  linkCard: { backgroundColor: '#1A1A1A', borderRadius: 8, padding: 12, marginBottom: 8 },
+  linkCard: { backgroundColor: '#F2F2F7', borderRadius: 8, padding: 12, marginBottom: 8 },
   linkUrl: { color: '#6366f1', fontSize: 14 },
   linkEditRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  linkInput: { flex: 1, backgroundColor: '#1A1A1A', borderRadius: 8, padding: 12, color: '#fff' },
-  removeLinkText: { color: '#555', fontSize: 18, paddingHorizontal: 4 },
+  linkInput: { flex: 1, backgroundColor: '#F2F2F7', borderRadius: 8, padding: 12, color: '#1C1C1E' },
+  removeLinkText: { color: '#8E8E93', fontSize: 18, paddingHorizontal: 4 },
   addLink: { color: '#6366f1', fontSize: 14, marginTop: 4 },
   // photos
   photoWrapper: { position: 'relative', marginRight: 10 },
   photo: { width: 200, height: 200, borderRadius: 12 },
-  removePhoto: { position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: 12, width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  removePhoto: { position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12, width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
   removePhotoText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  photoButton: { backgroundColor: '#1A1A1A', borderRadius: 8, padding: 14, alignItems: 'center' },
+  photoButton: { backgroundColor: '#F2F2F7', borderRadius: 8, padding: 14, alignItems: 'center' },
   photoButtonText: { color: '#6366f1', fontSize: 16, fontWeight: '600' },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' },
   modalImage: { width: Dimensions.get('window').width, height: Dimensions.get('window').height * 0.85 },

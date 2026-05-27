@@ -86,7 +86,7 @@ export default function SearchScreen() {
         <TextInput
           style={styles.input}
           placeholder="Search your entries..."
-          placeholderTextColor="#555"
+          placeholderTextColor="#AEAEB2"
           value={query}
           onChangeText={handleTextChange}
           autoCapitalize="none"
@@ -153,32 +153,32 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F0F0F' },
-  header: { padding: 24, paddingTop: 60 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#fff' },
-  searchBar: { paddingHorizontal: 16, marginBottom: 12 },
+  container: { flex: 1, backgroundColor: '#F2F2F7' },
+  header: { padding: 24, paddingTop: 60, backgroundColor: '#FFFFFF' },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#1C1C1E' },
+  searchBar: { paddingHorizontal: 16, marginBottom: 12, backgroundColor: '#FFFFFF', paddingBottom: 12 },
   input: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: '#F2F2F7',
     borderRadius: 12,
     padding: 14,
-    color: '#fff',
+    color: '#1C1C1E',
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#2A2A2A',
+    borderColor: '#E5E5EA',
   },
   tagsScroll: { flexGrow: 0, marginBottom: 8 },
   tagsContent: { paddingHorizontal: 16, gap: 8 },
-  tagChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1, borderColor: '#2A2A2A', backgroundColor: '#1A1A1A' },
-  tagChipText: { color: '#555', fontSize: 14, fontWeight: '500' },
+  tagChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1, borderColor: '#E5E5EA', backgroundColor: '#FFFFFF' },
+  tagChipText: { color: '#8E8E93', fontSize: 14, fontWeight: '500' },
   list: { padding: 16 },
-  card: { backgroundColor: '#1A1A1A', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#2A2A2A' },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E5E5EA' },
   date: { color: '#6366f1', fontSize: 12, fontWeight: '600', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
-  content: { color: '#fff', fontSize: 16, lineHeight: 24, marginBottom: 10 },
-  noContent: { color: '#555', fontSize: 16, fontStyle: 'italic', marginBottom: 10 },
+  content: { color: '#1C1C1E', fontSize: 16, lineHeight: 24, marginBottom: 10 },
+  noContent: { color: '#8E8E93', fontSize: 16, fontStyle: 'italic', marginBottom: 10 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   tag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
   tagText: { fontSize: 12, fontWeight: '500' },
   empty: { alignItems: 'center', marginTop: 60 },
-  emptyText: { color: '#fff', fontSize: 18, fontWeight: '600', marginBottom: 8 },
-  emptySubtext: { color: '#555', fontSize: 14 },
+  emptyText: { color: '#1C1C1E', fontSize: 18, fontWeight: '600', marginBottom: 8 },
+  emptySubtext: { color: '#8E8E93', fontSize: 14 },
 });
