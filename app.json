@@ -40,6 +40,12 @@
         }
       ],
       "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Life Log to use Face ID to unlock the app."
+        }
+      ],
       "expo-speech-recognition",
       [
         "expo-location",
