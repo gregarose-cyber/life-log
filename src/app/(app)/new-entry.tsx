@@ -163,7 +163,6 @@ export default function NewEntryScreen() {
           content: content.trim() || null,
           latitude: meta.latitude,
           longitude: meta.longitude,
-          weather: meta.weather,
           time_of_day: meta.time_of_day,
         })
         .select()

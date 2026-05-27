@@ -68,7 +68,6 @@ export default function QuickCaptureModal({ visible, onClose, onSaved }: Props) 
           content,
           latitude: meta.latitude,
           longitude: meta.longitude,
-          weather: meta.weather,
           time_of_day: meta.time_of_day,
         })
         .select()

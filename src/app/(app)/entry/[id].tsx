@@ -247,10 +247,9 @@ export default function EntryScreen() {
 
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.date}>{formatDate(entry.created_at)}</Text>
-        {(entry.weather || entry.time_of_day) && (
+        {entry.time_of_day && (
           <View style={styles.metaRow}>
-            {entry.time_of_day ? <Text style={styles.metaText}>{entry.time_of_day}</Text> : null}
-            {entry.weather ? <Text style={styles.metaText}>{entry.weather}</Text> : null}
+            <Text style={styles.metaText}>{entry.time_of_day}</Text>
           </View>
         )}
 
