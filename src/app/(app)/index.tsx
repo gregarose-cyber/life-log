@@ -1,6 +1,7 @@
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Entry } from '@/lib/types';
+import QuickCaptureModal from '@/components/QuickCaptureModal';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
@@ -10,6 +11,7 @@ export default function JournalScreen() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [quickCaptureOpen, setQuickCaptureOpen] = useState(false);
   const loadedIds = useRef<Set<string>>(new Set());
   const { signOut, user } = useAuth();
   const router = useRouter();
@@ -94,13 +96,24 @@ export default function JournalScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Life Log</Text>
-        <TouchableOpacity onPress={() => Alert.alert('Sign Out', 'Are you sure?', [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Sign Out', style: 'destructive', onPress: signOut }
-        ])}>
-          <Text style={styles.signOut}>Sign Out</Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.quickCaptureBtn} onPress={() => setQuickCaptureOpen(true)}>
+            <Text style={styles.quickCaptureBtnText}>⚡ Capture</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => Alert.alert('Sign Out', 'Are you sure?', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Sign Out', style: 'destructive', onPress: signOut }
+          ])}>
+            <Text style={styles.signOut}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      <QuickCaptureModal
+        visible={quickCaptureOpen}
+        onClose={() => setQuickCaptureOpen(false)}
+        onSaved={() => { setQuickCaptureOpen(false); fetchEntries(); }}
+      />
 
       <FlatList
         data={entries}
@@ -124,7 +137,10 @@ export default function JournalScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0F0F0F' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 24, paddingTop: 60 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#fff' },
+  quickCaptureBtn: { backgroundColor: '#6366f1', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20 },
+  quickCaptureBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
   signOut: { color: '#555', fontSize: 14 },
   list: { padding: 16 },
   empty: { flex: 1 },
