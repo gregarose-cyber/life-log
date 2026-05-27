@@ -18,6 +18,7 @@ export default function EntryScreen() {
   const [saving, setSaving] = useState(false);
   const [photos, setPhotos] = useState<{ url: string; id: string; storagePath: string }[]>([]);
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
+  const [locationName, setLocationName] = useState<string | null>(null);
 
   // edit-mode state
   const [allTags, setAllTags] = useState<Tag[]>([]);
@@ -97,6 +98,26 @@ export default function EntryScreen() {
       setContent(data.content || '');
       if (data.photos?.length > 0) fetchPhotoUrls(data.photos);
       else setPhotos([]);
+      if (data.latitude != null && data.longitude != null) {
+        fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${data.latitude}&lon=${data.longitude}&format=json`,
+          { headers: { 'User-Agent': 'LifeLogApp/1.0' } }
+        )
+          .then((res) => res.json())
+          .then((json) => {
+            const name = json.name;
+            const addr = json.address ?? {};
+            const city = addr.city ?? addr.town ?? addr.village ?? addr.suburb ?? '';
+            const state = addr.state ?? '';
+            if (name) {
+              setLocationName(`${name}, ${city}`.replace(/, $/, ''));
+            } else {
+              const parts = [addr.road, city].filter(Boolean);
+              setLocationName(parts.join(', ') || state || null);
+            }
+          })
+          .catch(() => {});
+      }
     }
   };
 
@@ -247,9 +268,10 @@ export default function EntryScreen() {
 
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.date}>{formatDate(entry.created_at)}</Text>
-        {entry.time_of_day && (
+        {(entry.time_of_day || locationName) && (
           <View style={styles.metaRow}>
-            <Text style={styles.metaText}>{entry.time_of_day}</Text>
+            {entry.time_of_day ? <Text style={styles.metaText}>{entry.time_of_day}</Text> : null}
+            {locationName ? <Text style={styles.metaText}>{locationName}</Text> : null}
           </View>
         )}
 
