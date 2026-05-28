@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { captureAutoMetadata } from '@/utils/autoMetadata';
 import { EntryTemplate, TEMPLATES, serializeTemplate } from './EntryTemplates';
+import LocationPicker, { PlaceResult } from './LocationPicker';
 
 interface Props {
   visible: boolean;
@@ -30,6 +31,8 @@ export default function QuickCaptureModal({ visible, onClose, onSaved }: Props) 
   const [selectedTemplate, setSelectedTemplate] = useState<EntryTemplate | null>(null);
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<PlaceResult | null>(null);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
   const { user } = useAuth();
 
   const reset = () => {
@@ -37,6 +40,7 @@ export default function QuickCaptureModal({ visible, onClose, onSaved }: Props) 
     setFreeText('');
     setSelectedTemplate(null);
     setFieldValues({});
+    setSelectedLocation(null);
   };
 
   const handleClose = () => { reset(); onClose(); };
@@ -66,8 +70,9 @@ export default function QuickCaptureModal({ visible, onClose, onSaved }: Props) 
         .insert({
           user_id: user?.id,
           content,
-          latitude: meta.latitude,
-          longitude: meta.longitude,
+          latitude: selectedLocation?.latitude ?? meta.latitude,
+          longitude: selectedLocation?.longitude ?? meta.longitude,
+          location_name: selectedLocation?.name ?? null,
           time_of_day: meta.time_of_day,
         })
         .select()
@@ -117,88 +122,114 @@ export default function QuickCaptureModal({ visible, onClose, onSaved }: Props) 
     }
   };
 
+  const LocationButton = () => (
+    <TouchableOpacity style={styles.locationBtn} onPress={() => setShowLocationPicker(true)}>
+      <Text style={styles.locationBtnText}>
+        {selectedLocation ? `📍  ${selectedLocation.name}` : '📍  Add location'}
+      </Text>
+      {selectedLocation && (
+        <TouchableOpacity onPress={() => setSelectedLocation(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Text style={styles.locationClear}>✕</Text>
+        </TouchableOpacity>
+      )}
+    </TouchableOpacity>
+  );
+
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
-      <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={styles.sheet}>
-          {/* Header */}
-          <View style={styles.header}>
-            {step !== 'capture' ? (
-              <TouchableOpacity onPress={() => setStep(step === 'fill-template' ? 'pick-template' : 'capture')}>
-                <Text style={styles.headerBack}>← Back</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity onPress={handleClose}>
-                <Text style={styles.headerCancel}>Cancel</Text>
-              </TouchableOpacity>
+    <>
+      <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
+        <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.sheet}>
+            {/* Header */}
+            <View style={styles.header}>
+              {step !== 'capture' ? (
+                <TouchableOpacity onPress={() => setStep(step === 'fill-template' ? 'pick-template' : 'capture')}>
+                  <Text style={styles.headerBack}>← Back</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity onPress={handleClose}>
+                  <Text style={styles.headerCancel}>Cancel</Text>
+                </TouchableOpacity>
+              )}
+              <Text style={styles.headerTitle}>
+                {step === 'capture' ? 'Quick Capture' : step === 'pick-template' ? 'Choose Template' : selectedTemplate?.name ?? ''}
+              </Text>
+              {step !== 'pick-template' ? (
+                <TouchableOpacity onPress={handleSave} disabled={saving}>
+                  <Text style={styles.headerSave}>{saving ? 'Saving...' : 'Save'}</Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={{ width: 50 }} />
+              )}
+            </View>
+
+            {/* STEP: free-form capture */}
+            {step === 'capture' && (
+              <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
+                <TextInput
+                  style={styles.freeInput}
+                  placeholder="What's on your mind..."
+                  placeholderTextColor="#AEAEB2"
+                  value={freeText}
+                  onChangeText={setFreeText}
+                  multiline
+                  autoFocus
+                />
+                <LocationButton />
+                <TouchableOpacity style={styles.templateToggle} onPress={() => setStep('pick-template')}>
+                  <Text style={styles.templateToggleText}>📋  Use a template</Text>
+                </TouchableOpacity>
+              </ScrollView>
             )}
-            <Text style={styles.headerTitle}>
-              {step === 'capture' ? 'Quick Capture' : step === 'pick-template' ? 'Choose Template' : selectedTemplate?.name ?? ''}
-            </Text>
-            {step !== 'pick-template' ? (
-              <TouchableOpacity onPress={handleSave} disabled={saving}>
-                <Text style={styles.headerSave}>{saving ? 'Saving...' : 'Save'}</Text>
-              </TouchableOpacity>
-            ) : (
-              <View style={{ width: 50 }} />
+
+            {/* STEP: pick template */}
+            {step === 'pick-template' && (
+              <ScrollView style={styles.body} contentContainerStyle={styles.templateGrid}>
+                {TEMPLATES.map(t => (
+                  <TouchableOpacity key={t.id} style={styles.templateCard} onPress={() => handlePickTemplate(t)}>
+                    <Text style={styles.templateIcon}>{t.icon}</Text>
+                    <Text style={styles.templateName}>{t.name}</Text>
+                    <Text style={styles.templateFieldCount}>{t.fields.length} fields</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+
+            {/* STEP: fill template */}
+            {step === 'fill-template' && selectedTemplate && (
+              <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
+                {selectedTemplate.fields.map((field, index) => (
+                  <View key={field.key} style={styles.fieldRow}>
+                    <Text style={styles.fieldLabel}>{field.label}</Text>
+                    <TextInput
+                      style={[styles.fieldInput, field.multiline && styles.fieldInputMultiline]}
+                      placeholder={field.placeholder}
+                      placeholderTextColor="#AEAEB2"
+                      value={fieldValues[field.key] ?? ''}
+                      onChangeText={text => setFieldValues(prev => ({ ...prev, [field.key]: text }))}
+                      multiline={field.multiline}
+                      autoFocus={index === 0}
+                      returnKeyType={field.multiline ? 'default' : 'next'}
+                    />
+                  </View>
+                ))}
+                <View style={styles.fieldRow}>
+                  <LocationButton />
+                </View>
+                <View style={{ height: 32 }} />
+              </ScrollView>
             )}
           </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
-          {/* STEP: free-form capture */}
-          {step === 'capture' && (
-            <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
-              <TextInput
-                style={styles.freeInput}
-                placeholder="What's on your mind..."
-                placeholderTextColor="#AEAEB2"
-                value={freeText}
-                onChangeText={setFreeText}
-                multiline
-                autoFocus
-              />
-              <TouchableOpacity style={styles.templateToggle} onPress={() => setStep('pick-template')}>
-                <Text style={styles.templateToggleText}>📋  Use a template</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          )}
-
-          {/* STEP: pick template */}
-          {step === 'pick-template' && (
-            <ScrollView style={styles.body} contentContainerStyle={styles.templateGrid}>
-              {TEMPLATES.map(t => (
-                <TouchableOpacity key={t.id} style={styles.templateCard} onPress={() => handlePickTemplate(t)}>
-                  <Text style={styles.templateIcon}>{t.icon}</Text>
-                  <Text style={styles.templateName}>{t.name}</Text>
-                  <Text style={styles.templateFieldCount}>{t.fields.length} fields</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
-
-          {/* STEP: fill template */}
-          {step === 'fill-template' && selectedTemplate && (
-            <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
-              {selectedTemplate.fields.map((field, index) => (
-                <View key={field.key} style={styles.fieldRow}>
-                  <Text style={styles.fieldLabel}>{field.label}</Text>
-                  <TextInput
-                    style={[styles.fieldInput, field.multiline && styles.fieldInputMultiline]}
-                    placeholder={field.placeholder}
-                    placeholderTextColor="#AEAEB2"
-                    value={fieldValues[field.key] ?? ''}
-                    onChangeText={text => setFieldValues(prev => ({ ...prev, [field.key]: text }))}
-                    multiline={field.multiline}
-                    autoFocus={index === 0}
-                    returnKeyType={field.multiline ? 'default' : 'next'}
-                  />
-                </View>
-              ))}
-              <View style={{ height: 32 }} />
-            </ScrollView>
-          )}
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+      <LocationPicker
+        visible={showLocationPicker}
+        onClose={() => setShowLocationPicker(false)}
+        onSelect={(place) => setSelectedLocation(place)}
+        initial={selectedLocation}
+      />
+    </>
   );
 }
 
@@ -213,6 +244,20 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   // free text
   freeInput: { color: '#1C1C1E', fontSize: 17, lineHeight: 26, padding: 20, minHeight: 140 },
+  locationBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 20,
+    marginBottom: 12,
+    padding: 14,
+    backgroundColor: '#F2F2F7',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
+  locationBtnText: { color: '#6366f1', fontSize: 15, flex: 1 },
+  locationClear: { color: '#8E8E93', fontSize: 16, paddingLeft: 8 },
   templateToggle: { marginHorizontal: 20, marginBottom: 20, padding: 14, backgroundColor: '#F2F2F7', borderRadius: 10, borderWidth: 1, borderColor: '#E5E5EA', alignItems: 'center' },
   templateToggleText: { color: '#8E8E93', fontSize: 15 },
   // template picker

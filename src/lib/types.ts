@@ -5,6 +5,7 @@ export interface Entry {
   audio_url: string | null;
   latitude: number | null;
   longitude: number | null;
+  location_name: string | null;
   time_of_day: string | null;
   created_at: string;
   updated_at: string;

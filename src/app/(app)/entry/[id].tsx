@@ -8,6 +8,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Animated, Dimensions, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../../lib/supabase';
+import LocationPicker, { PlaceResult } from '@/components/LocationPicker';
 
 export default function EntryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -19,6 +20,8 @@ export default function EntryScreen() {
   const [photos, setPhotos] = useState<{ url: string; id: string; storagePath: string }[]>([]);
   const [selectedPhotoUrl, setSelectedPhotoUrl] = useState<string | null>(null);
   const [locationName, setLocationName] = useState<string | null>(null);
+  const [editLocation, setEditLocation] = useState<PlaceResult | null>(null);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
 
   // edit-mode state
   const [allTags, setAllTags] = useState<Tag[]>([]);
@@ -98,7 +101,9 @@ export default function EntryScreen() {
       setContent(data.content || '');
       if (data.photos?.length > 0) fetchPhotoUrls(data.photos);
       else setPhotos([]);
-      if (data.latitude != null && data.longitude != null) {
+      if (data.location_name) {
+        setLocationName(data.location_name);
+      } else if (data.latitude != null && data.longitude != null) {
         fetch(
           `https://nominatim.openstreetmap.org/reverse?lat=${data.latitude}&lon=${data.longitude}&format=json`,
           { headers: { 'User-Agent': 'LifeLogApp/1.0' } }
@@ -129,6 +134,11 @@ export default function EntryScreen() {
     setEditLinks(existingLinks.length > 0 ? existingLinks : ['']);
     setShowTagInput(false);
     setNewTagName('');
+    setEditLocation(
+      entry.location_name && entry.latitude != null && entry.longitude != null
+        ? { name: entry.location_name, address: '', latitude: entry.latitude, longitude: entry.longitude }
+        : null
+    );
     setEditing(true);
   };
 
@@ -192,7 +202,13 @@ export default function EntryScreen() {
     try {
       await supabase
         .from('entries')
-        .update({ content: content.trim(), updated_at: new Date().toISOString() })
+        .update({
+          content: content.trim(),
+          updated_at: new Date().toISOString(),
+          location_name: editLocation?.name ?? null,
+          latitude: editLocation?.latitude ?? entry.latitude,
+          longitude: editLocation?.longitude ?? entry.longitude,
+        })
         .eq('id', id);
 
       await supabase.from('entry_tags').delete().eq('entry_id', id);
@@ -392,6 +408,23 @@ export default function EntryScreen() {
           </View>
         ) : null}
 
+        {/* LOCATION */}
+        {editing && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>LOCATION</Text>
+            <TouchableOpacity style={styles.locationBtn} onPress={() => setShowLocationPicker(true)}>
+              <Text style={styles.locationBtnText}>
+                {editLocation ? `📍  ${editLocation.name}` : '📍  Add location'}
+              </Text>
+              {editLocation && (
+                <TouchableOpacity onPress={() => setEditLocation(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Text style={styles.locationClear}>✕</Text>
+                </TouchableOpacity>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* PHOTOS */}
         <View style={styles.section}>
           {(photos.length > 0 || editing) && <Text style={styles.sectionLabel}>PHOTOS</Text>}
@@ -427,6 +460,13 @@ export default function EntryScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <LocationPicker
+        visible={showLocationPicker}
+        onClose={() => setShowLocationPicker(false)}
+        onSelect={(place) => setEditLocation(place)}
+        initial={editLocation}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -473,6 +513,10 @@ const styles = StyleSheet.create({
   linkInput: { flex: 1, backgroundColor: '#F2F2F7', borderRadius: 8, padding: 12, color: '#1C1C1E' },
   removeLinkText: { color: '#8E8E93', fontSize: 18, paddingHorizontal: 4 },
   addLink: { color: '#6366f1', fontSize: 14, marginTop: 4 },
+  // location
+  locationBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F2F2F7', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#E5E5EA' },
+  locationBtnText: { color: '#6366f1', fontSize: 15, flex: 1 },
+  locationClear: { color: '#8E8E93', fontSize: 16, paddingLeft: 8 },
   // photos
   photoWrapper: { position: 'relative', marginRight: 10 },
   photo: { width: 200, height: 200, borderRadius: 12 },
