@@ -317,6 +317,14 @@ export default function EntryScreen() {
           <Text style={styles.content}>{entry.content || 'No text content'}</Text>
         )}
 
+        {/* LOCATION - view mode */}
+        {!editing && locationName && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>LOCATION</Text>
+            <Text style={styles.locationText}>📍  {locationName}</Text>
+          </View>
+        )}
+
         {/* TAGS */}
         {editing ? (
           <View style={styles.section}>
@@ -514,6 +522,7 @@ const styles = StyleSheet.create({
   removeLinkText: { color: '#8E8E93', fontSize: 18, paddingHorizontal: 4 },
   addLink: { color: '#6366f1', fontSize: 14, marginTop: 4 },
   // location
+  locationText: { color: '#1C1C1E', fontSize: 15 },
   locationBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F2F2F7', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#E5E5EA' },
   locationBtnText: { color: '#6366f1', fontSize: 15, flex: 1 },
   locationClear: { color: '#8E8E93', fontSize: 16, paddingLeft: 8 },

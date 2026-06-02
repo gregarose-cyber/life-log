@@ -6,6 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import { captureAutoMetadata } from '@/utils/autoMetadata';
+import LocationPicker, { PlaceResult } from '@/components/LocationPicker';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
@@ -27,6 +28,8 @@ export default function NewEntryScreen() {
   const [links, setLinks] = useState<string[]>(['']);
   const [photos, setPhotos] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<PlaceResult | null>(null);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [listening, setListening] = useState(false);
   const [interimText, setInterimText] = useState('');
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -88,6 +91,7 @@ export default function NewEntryScreen() {
       setPhotos([]);
       setShowTagInput(false);
       setInterimText('');
+      setSelectedLocation(null);
       fetchTags();
       return () => {
         if (listening) ExpoSpeechRecognitionModule.stop();
@@ -161,8 +165,9 @@ export default function NewEntryScreen() {
         .insert({
           user_id: user?.id,
           content: content.trim() || null,
-          latitude: meta.latitude,
-          longitude: meta.longitude,
+          latitude: selectedLocation?.latitude ?? meta.latitude,
+          longitude: selectedLocation?.longitude ?? meta.longitude,
+          location_name: selectedLocation?.name ?? null,
           time_of_day: meta.time_of_day,
         })
         .select()
@@ -301,6 +306,20 @@ export default function NewEntryScreen() {
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionLabel}>LOCATION</Text>
+          <TouchableOpacity style={styles.locationBtn} onPress={() => setShowLocationPicker(true)}>
+            <Text style={styles.locationBtnText}>
+              {selectedLocation ? `📍  ${selectedLocation.name}` : '📍  Add location'}
+            </Text>
+            {selectedLocation && (
+              <TouchableOpacity onPress={() => setSelectedLocation(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Text style={styles.locationClear}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionLabel}>PHOTOS</Text>
           {photos.length > 0 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.thumbsRow}>
@@ -329,6 +348,13 @@ export default function NewEntryScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      <LocationPicker
+        visible={showLocationPicker}
+        onClose={() => setShowLocationPicker(false)}
+        onSelect={(place) => setSelectedLocation(place)}
+        initial={selectedLocation}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -365,6 +391,9 @@ const styles = StyleSheet.create({
   thumb: { width: 80, height: 80, borderRadius: 8 },
   removePhoto: { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 10, width: 20, height: 20, alignItems: 'center', justifyContent: 'center' },
   removePhotoText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  locationBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F2F2F7', borderRadius: 10, padding: 14, borderWidth: 1, borderColor: '#E5E5EA' },
+  locationBtnText: { color: '#6366f1', fontSize: 15, flex: 1 },
+  locationClear: { color: '#8E8E93', fontSize: 16, paddingLeft: 8 },
   photoButtons: { flexDirection: 'row', gap: 8 },
   photoButton: { backgroundColor: '#F2F2F7', borderRadius: 8, padding: 14, alignItems: 'center' },
   photoButtonText: { color: '#6366f1', fontSize: 16, fontWeight: '600' },
