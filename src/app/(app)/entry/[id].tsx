@@ -321,7 +321,17 @@ export default function EntryScreen() {
         {!editing && locationName && (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>LOCATION</Text>
-            <Text style={styles.locationText}>📍  {locationName}</Text>
+            <TouchableOpacity onPress={() => {
+              const lat = entry.latitude;
+              const lon = entry.longitude;
+              const name = encodeURIComponent(locationName);
+              const url = lat != null && lon != null
+                ? `maps:0,0?q=${name}&ll=${lat},${lon}`
+                : `maps:0,0?q=${name}`;
+              Linking.openURL(url);
+            }}>
+              <Text style={styles.locationText}>📍  {locationName}</Text>
+            </TouchableOpacity>
           </View>
         )}
 
