@@ -6,6 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import { captureAutoMetadata } from '@/utils/autoMetadata';
+import { generateTitle } from '@/utils/generateTitle';
 import LocationPicker, { PlaceResult } from '@/components/LocationPicker';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -20,6 +21,7 @@ import {
 } from 'react-native';
 
 export default function NewEntryScreen() {
+  const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [tags, setTags] = useState<Tag[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -85,6 +87,7 @@ export default function NewEntryScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      setTitle('');
       setContent('');
       setSelectedTags([]);
       setLinks(['']);
@@ -159,11 +162,20 @@ export default function NewEntryScreen() {
     setSaving(true);
     try {
       const meta = await captureAutoMetadata();
+      const tagNames = tags.filter(t => selectedTags.includes(t.id)).map(t => t.name);
+
+      const resolvedTitle = title.trim() || await generateTitle({
+        content: content.trim() || null,
+        location_name: selectedLocation?.name ?? null,
+        tags: tagNames,
+        time_of_day: meta.time_of_day,
+      });
 
       const { data: entry, error } = await supabase
         .from('entries')
         .insert({
           user_id: user?.id,
+          title: resolvedTitle || null,
           content: content.trim() || null,
           latitude: selectedLocation?.latitude ?? meta.latitude,
           longitude: selectedLocation?.longitude ?? meta.longitude,
@@ -221,13 +233,21 @@ export default function NewEntryScreen() {
 
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
         <TextInput
+          style={styles.titleInput}
+          placeholder="Title (optional)"
+          placeholderTextColor="#AEAEB2"
+          value={title}
+          onChangeText={setTitle}
+          returnKeyType="next"
+          autoFocus
+        />
+        <TextInput
           style={styles.contentInput}
           placeholder="What's on your mind..."
           placeholderTextColor="#AEAEB2"
           value={content}
           onChangeText={setContent}
           multiline
-          autoFocus
         />
 
         {/* Mic button + interim transcript */}
@@ -366,7 +386,8 @@ const styles = StyleSheet.create({
   cancel: { color: '#8E8E93', fontSize: 16 },
   save: { color: '#6366f1', fontSize: 16, fontWeight: '600' },
   scroll: { flex: 1 },
-  contentInput: { color: '#1C1C1E', fontSize: 18, lineHeight: 28, padding: 20, minHeight: 200, backgroundColor: '#FFFFFF' },
+  titleInput: { color: '#1C1C1E', fontSize: 22, fontWeight: '600', padding: 20, paddingBottom: 8, backgroundColor: '#FFFFFF' },
+  contentInput: { color: '#1C1C1E', fontSize: 18, lineHeight: 28, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 20, minHeight: 160, backgroundColor: '#FFFFFF' },
   micRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 16, gap: 12, backgroundColor: '#FFFFFF' },
   micButton: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#F2F2F7', borderWidth: 1, borderColor: '#E5E5EA', alignItems: 'center', justifyContent: 'center' },
   micButtonActive: { backgroundColor: '#FEE2E2', borderColor: '#ef4444' },

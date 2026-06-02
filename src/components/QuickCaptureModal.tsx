@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { captureAutoMetadata } from '@/utils/autoMetadata';
+import { generateTitle } from '@/utils/generateTitle';
 import { EntryTemplate, TEMPLATES, serializeTemplate } from './EntryTemplates';
 import LocationPicker, { PlaceResult } from './LocationPicker';
 
@@ -27,6 +28,7 @@ type Step = 'capture' | 'pick-template' | 'fill-template';
 
 export default function QuickCaptureModal({ visible, onClose, onSaved }: Props) {
   const [step, setStep] = useState<Step>('capture');
+  const [entryTitle, setEntryTitle] = useState('');
   const [freeText, setFreeText] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<EntryTemplate | null>(null);
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
@@ -37,6 +39,7 @@ export default function QuickCaptureModal({ visible, onClose, onSaved }: Props) 
 
   const reset = () => {
     setStep('capture');
+    setEntryTitle('');
     setFreeText('');
     setSelectedTemplate(null);
     setFieldValues({});
@@ -65,10 +68,23 @@ export default function QuickCaptureModal({ visible, onClose, onSaved }: Props) 
     try {
       const meta = await captureAutoMetadata();
 
+      const templateFields = selectedTemplate
+        ? selectedTemplate.fields.map(f => `${f.label}: ${fieldValues[f.key] ?? ''}`).join(', ')
+        : undefined;
+
+      const resolvedTitle = entryTitle.trim() || await generateTitle({
+        content: selectedTemplate ? undefined : freeText.trim() || undefined,
+        location_name: selectedLocation?.name ?? null,
+        time_of_day: meta.time_of_day,
+        template_name: selectedTemplate?.name,
+        template_fields: templateFields,
+      });
+
       const { data: entry, error } = await supabase
         .from('entries')
         .insert({
           user_id: user?.id,
+          title: resolvedTitle || null,
           content,
           latitude: selectedLocation?.latitude ?? meta.latitude,
           longitude: selectedLocation?.longitude ?? meta.longitude,
@@ -167,13 +183,21 @@ export default function QuickCaptureModal({ visible, onClose, onSaved }: Props) 
             {step === 'capture' && (
               <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
                 <TextInput
+                  style={styles.titleInput}
+                  placeholder="Title (optional)"
+                  placeholderTextColor="#AEAEB2"
+                  value={entryTitle}
+                  onChangeText={setEntryTitle}
+                  returnKeyType="next"
+                  autoFocus
+                />
+                <TextInput
                   style={styles.freeInput}
                   placeholder="What's on your mind..."
                   placeholderTextColor="#AEAEB2"
                   value={freeText}
                   onChangeText={setFreeText}
                   multiline
-                  autoFocus
                 />
                 <LocationButton />
                 <TouchableOpacity style={styles.templateToggle} onPress={() => setStep('pick-template')}>
@@ -243,7 +267,8 @@ const styles = StyleSheet.create({
   headerSave: { color: '#6366f1', fontSize: 16, fontWeight: '600', width: 60, textAlign: 'right' },
   body: { flex: 1 },
   // free text
-  freeInput: { color: '#1C1C1E', fontSize: 17, lineHeight: 26, padding: 20, minHeight: 140 },
+  titleInput: { color: '#1C1C1E', fontSize: 20, fontWeight: '600', padding: 20, paddingBottom: 6 },
+  freeInput: { color: '#1C1C1E', fontSize: 17, lineHeight: 26, paddingHorizontal: 20, paddingTop: 6, paddingBottom: 20, minHeight: 120 },
   locationBtn: {
     flexDirection: 'row',
     alignItems: 'center',

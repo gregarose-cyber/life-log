@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Animated, Dimensions, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../../lib/supabase';
 import LocationPicker, { PlaceResult } from '@/components/LocationPicker';
+import { generateTitle } from '@/utils/generateTitle';
 
 export default function EntryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -22,6 +23,7 @@ export default function EntryScreen() {
   const [locationName, setLocationName] = useState<string | null>(null);
   const [editLocation, setEditLocation] = useState<PlaceResult | null>(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
 
   // edit-mode state
   const [allTags, setAllTags] = useState<Tag[]>([]);
@@ -132,6 +134,7 @@ export default function EntryScreen() {
     setSelectedTagIds(entry.tags?.map((t: any) => t.tag?.id).filter(Boolean) ?? []);
     const existingLinks = entry.links?.map((l: any) => l.url) ?? [];
     setEditLinks(existingLinks.length > 0 ? existingLinks : ['']);
+    setEditTitle(entry.title ?? '');
     setShowTagInput(false);
     setNewTagName('');
     setEditLocation(
@@ -200,9 +203,18 @@ export default function EntryScreen() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const tagNames = entry.tags?.map((t: any) => t.tag?.name).filter(Boolean) ?? [];
+      const resolvedTitle = editTitle.trim() || await generateTitle({
+        content: content.trim() || null,
+        location_name: editLocation?.name ?? entry.location_name,
+        tags: tagNames,
+        time_of_day: entry.time_of_day,
+      });
+
       await supabase
         .from('entries')
         .update({
+          title: resolvedTitle || null,
           content: content.trim(),
           updated_at: new Date().toISOString(),
           location_name: editLocation?.name ?? null,
@@ -283,6 +295,18 @@ export default function EntryScreen() {
       </View>
 
       <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
+        {editing ? (
+          <TextInput
+            style={styles.titleInput}
+            value={editTitle}
+            onChangeText={setEditTitle}
+            placeholder="Title (optional)"
+            placeholderTextColor="#AEAEB2"
+            returnKeyType="next"
+          />
+        ) : entry.title ? (
+          <Text style={styles.entryTitle}>{entry.title}</Text>
+        ) : null}
         <Text style={styles.date}>{formatDate(entry.created_at)}</Text>
         {(entry.time_of_day || locationName) && (
           <View style={styles.metaRow}>
@@ -501,6 +525,8 @@ const styles = StyleSheet.create({
   deleteBtn: {},
   delete: { color: '#ef4444', fontSize: 16 },
   scroll: { flex: 1, padding: 20, backgroundColor: '#FFFFFF' },
+  entryTitle: { color: '#1C1C1E', fontSize: 24, fontWeight: '700', marginBottom: 8, lineHeight: 32 },
+  titleInput: { color: '#1C1C1E', fontSize: 22, fontWeight: '600', marginBottom: 8, paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: '#E5E5EA' },
   date: { color: '#6366f1', fontSize: 13, fontWeight: '600', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
   metaRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
   metaText: { color: '#AEAEB2', fontSize: 13 },

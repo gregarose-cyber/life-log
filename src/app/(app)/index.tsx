@@ -63,11 +63,14 @@ export default function JournalScreen() {
         <View style={styles.cardInner}>
           <View style={styles.cardText}>
             <Text style={styles.date}>{formatDate(item.created_at)}</Text>
+            {item.title ? (
+              <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
+            ) : null}
             {item.content ? (
               <Text style={styles.content} numberOfLines={thumbUrl ? 2 : 3}>{item.content}</Text>
-            ) : (
+            ) : !item.title ? (
               <Text style={styles.noContent}>Photo entry</Text>
-            )}
+            ) : null}
             <View style={styles.meta}>
               {item.tags?.length > 0 && (
                 <View style={styles.tags}>
@@ -152,7 +155,8 @@ const styles = StyleSheet.create({
   cardText: { flex: 1 },
   thumbnail: { width: 72, height: 72, borderRadius: 10, flexShrink: 0 },
   date: { color: '#6366f1', fontSize: 12, fontWeight: '600', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
-  content: { color: '#1C1C1E', fontSize: 16, lineHeight: 24, marginBottom: 12 },
+  cardTitle: { color: '#1C1C1E', fontSize: 16, fontWeight: '600', marginBottom: 4 },
+  content: { color: '#8E8E93', fontSize: 14, lineHeight: 22, marginBottom: 12 },
   noContent: { color: '#8E8E93', fontSize: 16, fontStyle: 'italic', marginBottom: 12 },
   meta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
