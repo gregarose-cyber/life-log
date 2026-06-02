@@ -326,8 +326,8 @@ export default function EntryScreen() {
               const lon = entry.longitude;
               const name = encodeURIComponent(locationName);
               const url = lat != null && lon != null
-                ? `maps:0,0?q=${name}&ll=${lat},${lon}`
-                : `maps:0,0?q=${name}`;
+                ? `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`
+                : `https://www.google.com/maps/search/?api=1&query=${name}`;
               Linking.openURL(url);
             }}>
               <Text style={styles.locationText}>📍  {locationName}</Text>
