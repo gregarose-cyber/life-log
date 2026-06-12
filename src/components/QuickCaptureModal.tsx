@@ -130,7 +130,7 @@ export default function QuickCaptureModal({ visible, onClose, onSaved }: Props) 
         }
       }
 
-      applySuggestedTags({
+      await applySuggestedTags({
         entryId: entry.id,
         userId: user!.id,
         title: resolvedTitle || null,

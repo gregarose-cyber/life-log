@@ -78,7 +78,12 @@ export default function EntryScreen() {
     ExpoSpeechRecognitionModule.start({ lang: 'en-US', interimResults: true });
   };
 
-  useEffect(() => { fetchEntry(); }, [id]);
+  useEffect(() => {
+    setEditing(false);
+    setSelectedTagIds([]);
+    setEditTitle('');
+    fetchEntry();
+  }, [id]);
 
   const fetchPhotoUrls = async (photoRecords: any[]) => {
     const result = await Promise.all(

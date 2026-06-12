@@ -212,8 +212,7 @@ export default function NewEntryScreen() {
         await supabase.from('entry_photos').insert({ entry_id: entry.id, storage_path: fileName });
       }
 
-      router.replace('/(app)');
-      applySuggestedTags({
+      await applySuggestedTags({
         entryId: entry.id,
         userId: user!.id,
         title: resolvedTitle || null,
@@ -221,6 +220,7 @@ export default function NewEntryScreen() {
         location_name: selectedLocation?.name ?? null,
         time_of_day: meta.time_of_day,
       });
+      router.replace('/(app)');
     } catch (err: any) {
       Alert.alert('Error', err?.message ?? String(err));
     } finally {

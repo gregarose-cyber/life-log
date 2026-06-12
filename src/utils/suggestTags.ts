@@ -54,9 +54,16 @@ export async function applySuggestedTags(params: ApplySuggestedTagsParams): Prom
 
       if (!tagId) continue;
 
-      await supabase
+      const { data: linked } = await supabase
         .from('entry_tags')
-        .upsert({ entry_id: params.entryId, tag_id: tagId }, { onConflict: 'entry_id,tag_id', ignoreDuplicates: true });
+        .select('entry_id')
+        .eq('entry_id', params.entryId)
+        .eq('tag_id', tagId)
+        .maybeSingle();
+
+      if (!linked) {
+        await supabase.from('entry_tags').insert({ entry_id: params.entryId, tag_id: tagId });
+      }
     }
   } catch {
     // silent failure — entry is already saved
