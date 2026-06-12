@@ -7,6 +7,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import { captureAutoMetadata } from '@/utils/autoMetadata';
 import { generateTitle } from '@/utils/generateTitle';
+import { applySuggestedTags } from '@/utils/suggestTags';
 import LocationPicker, { PlaceResult } from '@/components/LocationPicker';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -212,6 +213,14 @@ export default function NewEntryScreen() {
       }
 
       router.replace('/(app)');
+      applySuggestedTags({
+        entryId: entry.id,
+        userId: user!.id,
+        title: resolvedTitle || null,
+        content: content.trim() || null,
+        location_name: selectedLocation?.name ?? null,
+        time_of_day: meta.time_of_day,
+      });
     } catch (err: any) {
       Alert.alert('Error', err?.message ?? String(err));
     } finally {

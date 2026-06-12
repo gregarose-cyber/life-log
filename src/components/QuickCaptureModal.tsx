@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { captureAutoMetadata } from '@/utils/autoMetadata';
 import { generateTitle } from '@/utils/generateTitle';
+import { applySuggestedTags } from '@/utils/suggestTags';
 import { EntryTemplate, TEMPLATES, serializeTemplate } from './EntryTemplates';
 import LocationPicker, { PlaceResult } from './LocationPicker';
 
@@ -129,6 +130,15 @@ export default function QuickCaptureModal({ visible, onClose, onSaved }: Props) 
         }
       }
 
+      applySuggestedTags({
+        entryId: entry.id,
+        userId: user!.id,
+        title: resolvedTitle || null,
+        content: selectedTemplate ? null : freeText.trim() || null,
+        location_name: selectedLocation?.name ?? null,
+        template_name: selectedTemplate?.name ?? null,
+        time_of_day: meta.time_of_day,
+      });
       reset();
       onSaved();
     } catch (err: any) {
