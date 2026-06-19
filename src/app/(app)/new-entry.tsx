@@ -104,7 +104,7 @@ export default function NewEntryScreen() {
   );
 
   const fetchTags = async () => {
-    const { data } = await supabase.from('tags').select('*').eq('user_id', user?.id);
+    const { data } = await supabase.from('tags').select('*').eq('user_id', user?.id).eq('archived', false);
     setTags(data || []);
   };
 

@@ -2,11 +2,13 @@ import { BIOMETRIC_LOCK_KEY } from '@/components/BiometricGate';
 import { useAuth } from '@/context/AuthContext';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
 export default function SettingsScreen() {
   const { signOut } = useAuth();
+  const router = useRouter();
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [supportedTypes, setSupportedTypes] = useState<number[]>([]);
 
@@ -67,6 +69,17 @@ export default function SettingsScreen() {
       </View>
 
       <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Tags</Text>
+        <TouchableOpacity style={styles.row} onPress={() => router.push('/(app)/manage-tags')}>
+          <View style={styles.rowLeft}>
+            <Text style={styles.rowLabel}>Manage Tags</Text>
+            <Text style={styles.rowSubtitle}>Archive or delete tags</Text>
+          </View>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
         <TouchableOpacity style={styles.signOutRow} onPress={handleSignOut}>
           <Text style={styles.signOutText}>Sign Out</Text>
@@ -109,4 +122,5 @@ const styles = StyleSheet.create({
   rowSubtitle: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
   signOutRow: { paddingHorizontal: 16, paddingVertical: 14 },
   signOutText: { fontSize: 16, color: '#FF3B30', fontWeight: '500' },
+  chevron: { fontSize: 20, color: '#C7C7CC', fontWeight: '300' },
 });

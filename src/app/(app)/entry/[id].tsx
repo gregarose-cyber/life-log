@@ -134,7 +134,7 @@ export default function EntryScreen() {
   };
 
   const startEditing = async () => {
-const { data: tagsData } = await supabase.from('tags').select('*').eq('user_id', user?.id);
+    const { data: tagsData } = await supabase.from('tags').select('*').eq('user_id', user?.id).eq('archived', false);
     setAllTags(tagsData || []);
     setSelectedTagIds(entry.tags?.map((t: any) => t.tag?.id).filter(Boolean) ?? []);
     const existingLinks = entry.links?.map((l: any) => l.url) ?? [];
