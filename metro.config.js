@@ -2,9 +2,11 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
-// OpenTelemetry packages use dynamic import() with webpack magic comments
-// (e.g. /* webpackIgnore: true */) that Metro cannot parse. Since OTel is not
-// needed in React Native, resolve all @opentelemetry/* imports to empty modules.
+// Disable package.exports resolution — prevents Metro from picking up ESM
+// entry points that contain webpack magic comments Hermes can't compile.
+config.resolver.unstable_enablePackageExports = false;
+
+// Also resolve @opentelemetry/* to empty modules as a belt-and-suspenders measure.
 const originalResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (moduleName.startsWith('@opentelemetry/')) {
