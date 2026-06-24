@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { checkRateLimit } from '../_shared/rateLimit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,6 +15,9 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
+    const { allowed } = await checkRateLimit(req);
+    if (!allowed) return json({ tags: [] });
+
     const { title, content, location_name, template_name, time_of_day } = await req.json();
 
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY');

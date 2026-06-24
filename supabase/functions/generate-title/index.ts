@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { checkRateLimit } from '../_shared/rateLimit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +12,13 @@ serve(async (req) => {
   }
 
   try {
+    const { allowed } = await checkRateLimit(req);
+    if (!allowed) {
+      return new Response(JSON.stringify({ title: '' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { content, location_name, tags, time_of_day, template_name, template_fields } =
       await req.json();
 
