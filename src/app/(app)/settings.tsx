@@ -1,5 +1,6 @@
 import { BIOMETRIC_LOCK_KEY } from '@/components/BiometricGate';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
@@ -40,6 +41,42 @@ export default function SettingsScreen() {
     }
     await SecureStore.setItemAsync(BIOMETRIC_LOCK_KEY, value ? 'true' : 'false');
     setBiometricEnabled(value);
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete your account and all your journal entries. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Account',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Are you sure?',
+              'All entries, photos, and tags will be deleted forever.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Yes, Delete Everything',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      const { error } = await supabase.functions.invoke('delete-account');
+                      if (error) throw error;
+                      await signOut();
+                    } catch (err: any) {
+                      Alert.alert('Error', err?.message ?? 'Could not delete account. Please try again.');
+                    }
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
   };
 
   const handleSignOut = () => {
@@ -84,6 +121,10 @@ export default function SettingsScreen() {
         <TouchableOpacity style={styles.signOutRow} onPress={handleSignOut}>
           <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
+        <View style={styles.divider} />
+        <TouchableOpacity style={styles.signOutRow} onPress={handleDeleteAccount}>
+          <Text style={styles.deleteText}>Delete Account</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -122,5 +163,7 @@ const styles = StyleSheet.create({
   rowSubtitle: { fontSize: 13, color: '#8E8E93', marginTop: 2 },
   signOutRow: { paddingHorizontal: 16, paddingVertical: 14 },
   signOutText: { fontSize: 16, color: '#FF3B30', fontWeight: '500' },
+  deleteText: { fontSize: 16, color: '#FF3B30', fontWeight: '500' },
+  divider: { height: 1, backgroundColor: '#F2F2F7', marginHorizontal: 16 },
   chevron: { fontSize: 20, color: '#C7C7CC', fontWeight: '300' },
 });
